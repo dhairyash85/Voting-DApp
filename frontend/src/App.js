@@ -13,6 +13,8 @@ function App() {
   const [votingStatus, setVotingStatus]=useState(true)
   const [remainingTime, setRemainingTime]=useState("")
   const [candidates, setCandidates]=useState([])
+  const [number, setNumber]=useState()
+  const [canVote, setCanVote]=useState(true)
   async function connectWallet(){
     if(window.ethereum){
       try{
@@ -24,6 +26,7 @@ function App() {
         setAccount(address)
         console.log("Metamask Connnected " + address)
         setIsConnected(true)
+        await checkCanVote()
       }catch(err){
         console.log(err)
       }
@@ -47,6 +50,7 @@ function App() {
   function handleAccountsChanged(accounts){
     if(accounts.length>0 && account!=accounts[0]){
       setAccount(accounts[0])
+      canVote()
     }else{
       setIsConnected(false)
       setAccount(null)
@@ -88,9 +92,33 @@ function App() {
     
   }
   
+  async function handleNumberChange(e){
+    setNumber(e.target.value)
+
+  }
+
+  async function checkCanVote(){
+    const provider= new ethers.providers.Web3Provider(window.ethereum)
+    await provider.send("eth_requestAccounts", []);
+    const signer= provider.getSigner()
+    const contractIntance=new ethers.Contract(contractAddress,contractABI, signer)
+    const voteStatus=await contractIntance.voters(await signer.getAddress())
+    setCanVote(voteStatus)
+  }
+
+  async function voteFunction(){
+    const provider= new ethers.providers.Web3Provider(window.ethereum)
+    await provider.send("eth_requestAccounts", []);
+    const signer= provider.getSigner()
+    const contractIntance=new ethers.Contract(contractAddress,contractABI, signer)
+    const tx=await contractIntance.vote(number)
+    await tx.wait()
+    await checkCanVote()
+  }
+
   return (
     <div className="App">
-      {isConnected ? (<Connected account={account} candidates={candidates} remainingTime={remainingTime} />):(<Login connectWallet={connectWallet}/>)}
+      {isConnected ? (<Connected account={account} candidates={candidates} remainingTime={remainingTime} number={number} handleNumberChange={handleNumberChange} canVote={canVote} voteFunction={voteFunction}/>):(<Login connectWallet={connectWallet}/>)}
     </div>
   );
 }
