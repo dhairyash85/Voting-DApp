@@ -1,4 +1,4 @@
-const contractAddress="0xf8EC822B46a05edd8F55FF7D463e17404Fb5A367"
+const contractAddress=""//private key
 
 const  contractABI=[
     {
